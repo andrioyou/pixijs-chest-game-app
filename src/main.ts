@@ -14,21 +14,21 @@ import { PlayButton } from './play-button';
   document.getElementById('pixi-container')!.appendChild(app.canvas);
 
   const CONFIG = {
+    /** with a change of number of chests, you may need to adjust the layout */
     chestCount: 6,
-    // winChance: 0.4, // 40% chance that selected chest is a win
-    // bonusChance: 0.25, // 25% of wins are bonus wins
+    /** From 0 to 1 */
+    winChance: 0.5,
+    /** From 0 to 1 */
+    winBonusChance: 0.25,
+    /** In seconds */
+    animationDuration: 0.5,
+
     // bonusMin: 50,
     // bonusMax: 500,
-    /** In seconds */
-    animationDuration: 1,
   };
 
-  const GameState = {
-    openedChests: 0,
-    IDLE: 'IDLE',
-    PLAYING: 'PLAYING',
-    CHEST_OPENED: 'CHEST_OPENED',
-    BONUS: 'BONUS',
+  const gameState = {
+    numberOfOpenedChests: 0,
   };
 
   // TITLE
@@ -53,7 +53,7 @@ import { PlayButton } from './play-button';
   chestsContainer.pivot.set(bounds2.width / 2, bounds2.height / 2);
   chests.forEach((chest) => {
     chest.container.on('pointerdown', () => {
-      chest.open();
+      openChest(chest);
     });
   });
 
@@ -66,16 +66,44 @@ import { PlayButton } from './play-button';
   });
   app.stage.addChild(playButton.container);
 
+  function openChest(chest: Chest): void {
+    gameState.numberOfOpenedChests++;
+    if (gameState.numberOfOpenedChests >= CONFIG.chestCount) {
+      setTimeout(
+        () => {
+          reset();
+        },
+        CONFIG.animationDuration * 1000 + 1000,
+      );
+    }
+    disableAllChests();
+    let result: 'lost' | 'win' | 'bonus' = 'lost';
+    const winRandom = Math.random();
+    if (winRandom < CONFIG.winChance) {
+      const winBonusRandom = Math.random();
+      if (winBonusRandom < CONFIG.winBonusChance) {
+        result = 'bonus';
+      } else {
+        result = 'win';
+      }
+    }
+    chest.open(result);
+    setTimeout(() => {
+      enableAllChests();
+      chest.disable();
+    }, CONFIG.animationDuration * 1000);
+  }
+
   function enableAllChests(): void {
-    chests.forEach((chest) => chest.enable());
+    chests.forEach((chest) => !chest.isOpened && chest.enable());
   }
 
   function disableAllChests(): void {
     chests.forEach((chest) => chest.disable());
   }
 
-  function initGame(): void {
-    disableAllChests();
+  function resetAllChests(): void {
+    chests.forEach((chest) => chest.reset());
   }
 
   function startGame(): void {
@@ -83,5 +111,12 @@ import { PlayButton } from './play-button';
     enableAllChests();
   }
 
-  initGame();
+  function reset(): void {
+    disableAllChests();
+    playButton.enable();
+    resetAllChests();
+    gameState.numberOfOpenedChests = 0;
+  }
+
+  reset();
 })();

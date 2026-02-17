@@ -7,15 +7,18 @@ const chestBottomTexture = await Assets.load('/assets/chest-bottom.jpg');
 export class Chest {
   readonly container: Container;
   readonly spritesContainer: Container;
+  isOpened = false;
+
+  private label: Text | undefined;
   private readonly chestTopSprite: Sprite;
   private readonly chestBottomSprite: Sprite;
-  public isAnimating = false;
-  public isOpened = false;
-  private animationDuration: number;
   private chestWidth = 80;
   private chestHeight = 50;
+  private animationDuration: number;
 
   constructor(x: number, y: number, animationDuration: number) {
+    this.animationDuration = animationDuration;
+
     // containers
     this.container = new Container();
     this.spritesContainer = new Container();
@@ -36,57 +39,44 @@ export class Chest {
     // make chest clickable
     this.container.eventMode = 'static';
     this.container.cursor = 'pointer';
-
-    this.animationDuration = animationDuration;
   }
 
-  open(): void {
-    if (this.isAnimating) return;
+  open(status: 'lost' | 'win' | 'bonus'): void {
     this.isOpened = true;
-    this.isAnimating = true;
     gsap.to(this.chestTopSprite, {
       rotation: Math.PI / -4,
       duration: this.animationDuration,
       ease: 'power2.out',
       onComplete: () => {
-        this.isAnimating = false;
-        this.disable();
-        this.getOpenResult();
+        this.setOpenResult(status);
       },
     });
   }
 
-  getOpenResult(): void {
-    let label: Text | undefined;
-    const random = Math.random();
-    if (random > 0.5) {
-      label = new Text({
-        text: 'WIN',
-        style: { fontSize: 18, fill: '#000000' },
-      });
-    } else {
-      label = new Text({
-        text: 'LOSE',
-        style: { fontSize: 18, fill: '#000000' },
-      });
+  private setOpenResult(status: 'lost' | 'win' | 'bonus'): void {
+    this.label = new Text({
+      text: 'LOSE',
+      style: { fontSize: 18, fill: '#000000' },
+    });
+    if (status === 'bonus') {
+      this.label.text = 'BONUS';
+    } else if (status === 'win') {
+      this.label.text = 'WIN';
     }
-    label.anchor.set(0.5, 0);
-    label.x = this.chestWidth / 2;
-    label.y = this.chestHeight + 5;
-    this.container.addChild(label);
+    this.label.anchor.set(0.5, 0);
+    this.label.x = this.chestWidth / 2;
+    this.label.y = this.chestHeight + 5;
+    this.container.addChild(this.label);
   }
 
-  // close(): void {
-  //   this.isOpened = false;
-  //   gsap.to(this.chestTopSprite, {
-  //     rotation: 0,
-  //     duration: this.animationDuration,
-  //     ease: 'power2.out',
-  //     onComplete: () => {
-  //       console.log('Animation finished');
-  //     },
-  //   });
-  // }
+  close(): void {
+    this.isOpened = false;
+    gsap.to(this.chestTopSprite, {
+      rotation: 0,
+      duration: this.animationDuration,
+      ease: 'power2.out',
+    });
+  }
 
   enable(): void {
     this.container.eventMode = 'static';
@@ -104,5 +94,12 @@ export class Chest {
     this.chestTopSprite.alpha = 0.6;
     this.chestBottomSprite.tint = 0x999999;
     this.chestBottomSprite.alpha = 0.6;
+  }
+
+  reset(): void {
+    this.isOpened = false;
+    this.close();
+    if (this.label) this.container.removeChild(this.label);
+    this.label = undefined;
   }
 }

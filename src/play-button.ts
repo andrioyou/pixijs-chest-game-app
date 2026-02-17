@@ -16,12 +16,17 @@ export class PlayButton {
     this.sprite.anchor.set(0.5);
     const targetWidth = 300;
     this.sprite.scale.set(targetWidth / this.sprite.texture.width);
+    this.container.addChild(this.sprite);
+
+    // label
     this.label = new Text({
       text: 'PLAY',
       style: { fontSize: 24, fill: '#ffffff' },
     });
     this.label.anchor.set(0.5);
-    this.container.addChild(this.sprite, this.label);
+    this.container.addChild(this.label);
+
+    // make it clickable
     this.container.eventMode = 'static';
     this.container.cursor = 'pointer';
   }
