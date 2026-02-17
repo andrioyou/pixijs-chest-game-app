@@ -9,9 +9,9 @@ export class Chest {
   readonly spritesContainer: Container;
   isOpened = false;
 
-  private label: Text | undefined;
   private readonly chestTopSprite: Sprite;
   private readonly chestBottomSprite: Sprite;
+  private label: Text | undefined;
   private chestWidth = 80;
   private chestHeight = 50;
   private animationDuration: number;
@@ -39,6 +39,8 @@ export class Chest {
     // make chest clickable
     this.container.eventMode = 'static';
     this.container.cursor = 'pointer';
+
+    this.disable();
   }
 
   open(status: 'lost' | 'win' | 'bonus'): void {
@@ -47,10 +49,8 @@ export class Chest {
       rotation: Math.PI / -4,
       duration: this.animationDuration,
       ease: 'power2.out',
-      onComplete: () => {
-        this.setOpenResult(status);
-      },
     });
+    this.setOpenResult(status);
   }
 
   private setOpenResult(status: 'lost' | 'win' | 'bonus'): void {
