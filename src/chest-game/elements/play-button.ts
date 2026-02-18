@@ -1,6 +1,5 @@
-import { Assets, Container, Sprite, Text } from 'pixi.js';
-
-const playButtonTexture = await Assets.load('/assets/play-button.jpg');
+import { Container, Sprite, Text } from 'pixi.js';
+import { ChestGameAssets } from '../interfaces/chest-game-assets.interface';
 
 export class PlayButton {
   container: Container;
@@ -8,12 +7,12 @@ export class PlayButton {
   private label: Text;
   private winPointsLabel: Text;
 
-  constructor() {
+  constructor(assets: ChestGameAssets) {
     // container
     this.container = new Container();
 
     // sprites
-    this.sprite = new Sprite(playButtonTexture);
+    this.sprite = new Sprite(assets.playButtonTexture);
     this.sprite.anchor.set(0.5);
     const targetWidth = 300;
     this.sprite.scale.set(targetWidth / this.sprite.texture.width);
@@ -32,7 +31,7 @@ export class PlayButton {
       text: '',
       style: { fontSize: 20, fill: '#000000' },
     });
-    this.winPointsLabel.anchor.set(0.5, 3);
+    this.winPointsLabel.anchor.set(0.5, 2.5);
     this.container.addChild(this.winPointsLabel);
 
     // make it clickable
@@ -42,7 +41,7 @@ export class PlayButton {
 
   showWinPointsCount(points: number): void {
     if (points >= 0) {
-      this.winPointsLabel.text = `You won ${points} $`;
+      this.winPointsLabel.text = `You won ${points} $!`;
     } else {
       this.winPointsLabel.text = '';
     }

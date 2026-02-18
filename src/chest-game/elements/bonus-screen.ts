@@ -20,7 +20,7 @@ export class BonusScreen {
     // label
     this.label = new Text({
       text: ``,
-      style: { fontSize: 50, fill: '#ffff00' },
+      style: { fontSize: 24, fill: '#ffff00' },
     });
     this.label.anchor.set(0.5);
     this.label.x = width / 2;

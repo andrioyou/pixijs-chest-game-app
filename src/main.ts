@@ -1,5 +1,5 @@
 import { Application } from 'pixi.js';
-import { ChestGame } from './chest-game';
+import { loadChestGame } from './chest-game/chest-game';
 
 (async () => {
   // Create a new application
@@ -11,6 +11,6 @@ import { ChestGame } from './chest-game';
   // Append the application canvas to the document body
   document.getElementById('pixi-container')!.appendChild(app.canvas);
 
-  const chestGame = new ChestGame();
+  const chestGame = await loadChestGame();
   app.stage.addChild(chestGame.container);
 })();

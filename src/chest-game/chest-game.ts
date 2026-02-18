@@ -1,8 +1,9 @@
-import { Container, Graphics } from 'pixi.js';
-import { Title } from './title';
-import { Chest } from './chest';
-import { PlayButton } from './play-button';
-import { BonusScreen } from './bonus-screen';
+import { Assets, Container, Graphics } from 'pixi.js';
+import { Title } from './elements/title';
+import { Chest } from './elements/chest';
+import { PlayButton } from './elements/play-button';
+import { BonusScreen } from './elements/bonus-screen';
+import { ChestGameAssets } from './interfaces/chest-game-assets.interface';
 
 const CONFIG = {
   /** with a change of number of chests, you may need to adjust the layout */
@@ -13,18 +14,6 @@ const CONFIG = {
   winBonusChance: 0.25,
   /** In seconds */
   animationDuration: 1,
-
-  // bonusMin: 50,
-  // bonusMax: 500,
-};
-
-const gameState = {
-  numberOfOpenedChests: 0,
-  collectedPoints: 0,
-  reset() {
-    this.numberOfOpenedChests = 0;
-    this.collectedPoints = 0;
-  },
 };
 
 export class ChestGame {
@@ -32,8 +21,16 @@ export class ChestGame {
   private chests: Chest[] = [];
   private playButton: PlayButton;
   private bonusScreen: BonusScreen;
+  private state = {
+    numberOfOpenedChests: 0,
+    collectedPoints: 0,
+    reset() {
+      this.numberOfOpenedChests = 0;
+      this.collectedPoints = 0;
+    },
+  };
 
-  constructor() {
+  constructor(private readonly assets: ChestGameAssets) {
     // game main container
     this.container = new Container();
     const bg = new Graphics();
@@ -66,9 +63,9 @@ export class ChestGame {
     // chests layout
     const chests = [];
     for (let i = 0; i < CONFIG.chestCount; i++) {
-      const x = (i % 3) * 150;
+      const x = (i % 3) * 130;
       const y = Math.floor(i / 3) * 170;
-      const chest = new Chest(x, y, CONFIG.animationDuration);
+      const chest = new Chest(this.assets, x, y, CONFIG.animationDuration);
       chests.push(chest);
       chestsContainer.addChild(chest.container);
     }
@@ -90,7 +87,7 @@ export class ChestGame {
   }
 
   private addPlayButton(): PlayButton {
-    const playButton = new PlayButton();
+    const playButton = new PlayButton(this.assets);
     const bounds = this.container.getLocalBounds();
     playButton.container.x = bounds.width / 2;
     playButton.container.y = (bounds.height / 10) * 8;
@@ -122,12 +119,12 @@ export class ChestGame {
     return result;
   }
 
-  updateWinPointsCount(points: number): void {
+  private updateWinPointsCount(points: number): void {
     this.playButton.showWinPointsCount(points);
   }
 
   private openChest(chest: Chest): void {
-    gameState.numberOfOpenedChests++;
+    this.state.numberOfOpenedChests++;
     this.disableAllChests();
 
     // start animation
@@ -137,25 +134,27 @@ export class ChestGame {
     let winPoints = 0;
     if (result === 'win') winPoints = 100;
     if (result === 'bonus') winPoints = 200;
-    gameState.collectedPoints += winPoints;
+    this.state.collectedPoints += winPoints;
 
     // post animation
     setTimeout(() => {
       this.enableAllChests();
-      chest.disable();
-      if (result === 'bonus') {
-        this.bonusScreen.show(winPoints);
-        this.bonusScreen.container.visible = true;
-        setTimeout(() => {
-          this.bonusScreen.hide();
-        }, 2000);
+      if (result === 'bonus') this.showBonusScreen(winPoints);
+
+      // check if all chest were opened
+      if (this.state.numberOfOpenedChests >= CONFIG.chestCount) {
+        this.updateWinPointsCount(this.state.collectedPoints);
+        this.playButton.enable();
       }
     }, CONFIG.animationDuration * 1000);
+  }
 
-    if (gameState.numberOfOpenedChests >= CONFIG.chestCount) {
-      this.updateWinPointsCount(gameState.collectedPoints);
-      this.playButton.enable();
-    }
+  private showBonusScreen(winPoints: number): void {
+    this.bonusScreen.show(winPoints);
+    this.bonusScreen.container.visible = true;
+    setTimeout(() => {
+      this.bonusScreen.hide();
+    }, 2000);
   }
 
   private enableAllChests(): void {
@@ -171,10 +170,27 @@ export class ChestGame {
   }
 
   private startGame(): void {
-    gameState.reset();
+    this.state.reset();
     this.resetAllChests();
     this.playButton.disable();
     this.enableAllChests();
     this.updateWinPointsCount(-1);
   }
+}
+
+export async function loadAssets() {
+  const chestTopTexture = await Assets.load('/assets/chest-top.jpg');
+  const chestBottomTexture = await Assets.load('/assets/chest-bottom.jpg');
+  const playButtonTexture = await Assets.load('/assets/play-button.jpg');
+
+  return {
+    chestTopTexture,
+    chestBottomTexture,
+    playButtonTexture,
+  };
+}
+
+export async function loadChestGame() {
+  const assets: ChestGameAssets = await loadAssets();
+  return new ChestGame(assets);
 }

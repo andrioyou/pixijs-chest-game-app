@@ -1,8 +1,6 @@
-import { Container, Sprite, Assets, Text } from 'pixi.js';
+import { Container, Sprite, Text } from 'pixi.js';
 import { gsap } from 'gsap';
-
-const chestTopTexture = await Assets.load('/assets/chest-top.jpg');
-const chestBottomTexture = await Assets.load('/assets/chest-bottom.jpg');
+import { ChestGameAssets } from '../interfaces/chest-game-assets.interface';
 
 export class Chest {
   readonly container: Container;
@@ -14,11 +12,13 @@ export class Chest {
   private label: Text | undefined;
   private chestWidth = 80;
   private chestHeight = 50;
-  private animationDuration: number;
 
-  constructor(x: number, y: number, animationDuration: number) {
-    this.animationDuration = animationDuration;
-
+  constructor(
+    private readonly assets: ChestGameAssets,
+    x: number,
+    y: number,
+    private readonly animationDuration: number,
+  ) {
     // containers
     this.container = new Container();
     this.spritesContainer = new Container();
@@ -28,8 +28,8 @@ export class Chest {
     this.container.pivot.set(bounds.width / 2, bounds.height / 2);
 
     // sprites and sizing
-    this.chestTopSprite = new Sprite(chestTopTexture);
-    this.chestBottomSprite = new Sprite(chestBottomTexture);
+    this.chestTopSprite = new Sprite(this.assets.chestTopTexture);
+    this.chestBottomSprite = new Sprite(this.assets.chestBottomTexture);
     this.spritesContainer.addChild(this.chestTopSprite, this.chestBottomSprite);
     this.spritesContainer.width = this.chestWidth;
     this.spritesContainer.height = this.chestHeight;
@@ -45,15 +45,38 @@ export class Chest {
 
   open(status: 'lost' | 'win' | 'bonus'): void {
     this.isOpened = true;
-    gsap.to(this.chestTopSprite, {
-      rotation: Math.PI / -4,
-      duration: this.animationDuration,
-      ease: 'power2.out',
-    });
-    this.setOpenResult(status);
+    if (status === 'bonus') {
+      gsap.to(this.chestTopSprite, {
+        rotation: Math.PI / -2,
+        duration: this.animationDuration,
+        ease: 'power2.out',
+      });
+    } else if (status === 'win') {
+      gsap.to(this.chestTopSprite, {
+        rotation: Math.PI / -4,
+        duration: this.animationDuration,
+        ease: 'power2.out',
+      });
+    } else {
+      gsap
+        .timeline()
+        .to(this.chestTopSprite, {
+          y: -30,
+          rotation: Math.PI / -16,
+          duration: this.animationDuration / 2,
+          ease: 'power2.out',
+        })
+        .to(this.chestTopSprite, {
+          y: 0,
+          rotation: 0,
+          duration: this.animationDuration / 2,
+          ease: 'power2.out',
+        });
+    }
+    this.addResultLabel(status);
   }
 
-  private setOpenResult(status: 'lost' | 'win' | 'bonus'): void {
+  private addResultLabel(status: 'lost' | 'win' | 'bonus'): void {
     this.label = new Text({
       text: 'LOSE',
       style: { fontSize: 18, fill: '#000000' },
